@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ocean of Books</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: black;
+            color: white;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin-left: 15px;
+        }
+
+        main {
+            padding: 20px;
+        }
+
+        #searchBar {
+            margin-bottom: 20px;
+            display: flex;
+        }
+
+        #searchInput {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+        }
+
+        #searchButton {
+            padding: 8px 15px;
+            background-color: black;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #bookList {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .book {
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+
+        .book h3 {
+            margin-top: 0;
+        }
+
+        #cartModal, #loginModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        #loginButton {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        #loginButton:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Ocean of Books</h1>
+        <nav>
+            <button id="loginButton">Login/Signup</button>
+            <a href="#" id="cartLink">Cart (0)</a>
+        </nav>
+    </header>
+
+    <main>
+        <div id="searchBar">
+            <input type="text" id="searchInput" placeholder="Search books...">
+            <button id="searchButton">Search</button>
+        </div>
+
+        <div id="bookList"></div>
+    </main>
+
+    <div id="cartModal">
+        <h2>Shopping Cart</h2>
+        <ul id="cartItems"></ul>
+        <p>Total Price: $<span id="totalPrice">0.00</span></p>
+        <button id="closeCart">Close</button>
+    </div>
+
+    <div id="loginModal">
+        <h2>Login/Signup</h2>
+        <form>
+            <label for="username">Username:</label>
+            <input type="text" id="username" required>
+            <label for="password">Password:</label>
+            <input type="password" id="password" required>
+            <button type="submit">Submit</button>
+        </form>
+        <button id="closeLogin">Close</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchButton = document.getElementById('searchButton');
+            const searchInput = document.getElementById('searchInput');
+            const bookList = document.getElementById('bookList');
+            const cartLink = document.getElementById('cartLink');
+            const cartItems = document.getElementById('cartItems');
+            const totalPriceElement = document.getElementById('totalPrice');
+            const cartModal = document.getElementById('cartModal');
+            const closeCart = document.getElementById('closeCart');
+            const loginButton = document.getElementById('loginButton');
+            const loginModal = document.getElementById('loginModal');
+            const closeLogin = document.getElementById('closeLogin');
+            let cart = [];
+
+            const books = [
+                 { title: 'The Lord of the Rings', author: 'J.R.R. Tolkien', genre: 'Fantasy', price: 14.99, description: 'An epic tale of a quest to destroy a powerful ring.' },
+                { title: 'Pride and Prejudice', author: 'Jane Austen', genre: 'Romance', price: 9.99, description: 'Classic romance novel exploring social class and love.' },
+                { title: '1984', author: 'George Orwell', genre: 'Dystopian', price: 12.99, description: 'A chilling vision of a totalitarian future.' },
+                { title: 'The Catcher in the Rye', author: 'J.D. Salinger', genre: 'Classic', price: 8.99, description: 'A coming-of-age story about a disillusioned teenager.' },
+                { title: 'To Kill a Mockingbird', author: 'Harper Lee', genre: 'Classic', price: 10.50, description: 'A powerful story about racial injustice and childhood innocence.' },
+                { title: 'Moby-Dick', author: 'Herman Melville', genre: 'Classic', price: 16.00, description: 'An epic tale of obsession and revenge on the high seas.' },
+                { title: 'Dune', author: 'Frank Herbert', genre: 'Science Fiction', price: 15.50, description: 'An epic science fiction saga set in a desert world.' },
+                { title: 'The Shining', author: 'Stephen King', genre: 'Horror', price: 13.50, description: 'A chilling tale of isolation and madness in a haunted hotel.' },
+                { title: 'The Hobbit', author: 'J.R.R. Tolkien', genre: 'Fantasy', price: 12.99, description: 'The adventure of Bilbo Baggins in Middle-earth.' },
+                { title: 'Dracula', author: 'Bram Stoker', genre: 'Horror', price: 11.00, description: 'The classic vampire novel that started it all.' },
+                { title: 'Frankenstein', author: 'Mary Shelley', genre: 'Horror', price: 10.75, description: 'A gothic horror novel about a scientist creating life.' },
+                { title: 'The Alchemist', author: 'Paulo Coelho', genre: 'Fiction', price: 9.25, description: 'A philosophical fable about following your dreams.' },
+                { title: 'Brave New World', author: 'Aldous Huxley', genre: 'Dystopian', price: 13.25, description: 'A thought-provoking vision of a futuristic society.' },
+                { title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', genre: 'Classic', price: 10.99, description: 'A novel about the American dream and high society.' },
+                { title: 'Crime and Punishment', author: 'Fyodor Dostoevsky', genre: 'Classic', price: 14.75, description: 'A psychological drama about guilt and redemption.' },
+                { title: 'The Name of the Wind', author: 'Patrick Rothfuss', genre: 'Fantasy', price: 16.50, description: 'An epic fantasy story of a legendary figure.' },
+                { title: 'The Stand', author: 'Stephen King', genre: 'Post-Apocalyptic', price: 18.00, description: 'A massive apocalyptic horror novel about the struggle between good and evil.' }
+            ];
+
+            function displayBooks(bookData) {
+                bookList.innerHTML = '';
+                if (bookData.length === 0) {
+                    bookList.innerHTML = '<p>Book not available</p>';
+                    return;
+                }
+                bookData.forEach(book => {
+                    const bookDiv = document.createElement('div');
+                    bookDiv.classList.add('book');
+                    bookDiv.innerHTML = `
+                        <h3>${book.title}</h3>
+                        <p>Author: ${book.author}</p>
+                        <p>Genre: ${book.genre}</p>
+                        <p>Price: $${book.price.toFixed(2)}</p>
+                        <p>${book.description}</p>
+                        <button class="addToCart" data-title="${book.title}" data-price="${book.price}">Add to Cart</button>
+                    `;
+                    bookList.appendChild(bookDiv);
+                });
+            }
+
+            function updateCart() {
+                cartItems.innerHTML = '';
+                let totalPrice = 0;
+                cart.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = `${item.title} - $${item.price.toFixed(2)}`;
+                    cartItems.appendChild(li);
+                    totalPrice += item.price;
+                });
+                totalPriceElement.textContent = totalPrice.toFixed(2);
+                cartLink.textContent = `Cart (${cart.length})`;
+            }
+
+            document.addEventListener('click', (event) => {
+                if (event.target.classList.contains('addToCart')) {
+                    const title = event.target.getAttribute('data-title');
+                    const price = parseFloat(event.target.getAttribute('data-price'));
+                    cart.push({ title, price });
+                    updateCart();
+                }
+                if (event.target.id === 'cartLink') {
+                    cartModal.style.display = 'block';
+                }
+                if (event.target.id === 'closeCart') {
+                    cartModal.style.display = 'none';
+                }
+                if (event.target.id === 'loginButton') {
+                    loginModal.style.display = 'block';
+                }
+                if (event.target.id === 'closeLogin') {
+                    loginModal.style.display = 'none';
+                }
+            });
+
+            searchButton.addEventListener('click', () => {
+                const query = searchInput.value.trim().toLowerCase();
+                const filteredBooks = books.filter(book => book.title.toLowerCase().includes(query));
+                displayBooks(filteredBooks);
+            });
+
+            displayBooks(books);
+        });
+    </script>
+</body>
+</html>
